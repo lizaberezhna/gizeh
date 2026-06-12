@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>WebXR: Піраміди Гізи | Довкільна AR</title>
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.176.0/build/three.module.js",
+                "ARButton": "https://unpkg.com/three@0.176.0/examples/jsm/webxr/ARButton.js"
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .info-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            background: rgba(0,0,0,0.85);
+            color: #FFD700;
+            padding: 12px;
+            font-size: 14px;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+            pointer-events: none;
+            font-weight: 500;
+            border-top: 2px solid #FFD700;
+        }
+        
+        .status-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            color: #0f0;
+            padding: 8px 15px;
+            border-radius: 25px;
+            font-size: 12px;
+            font-family: monospace;
+            z-index: 100;
+            backdrop-filter: blur(4px);
+            pointer-events: none;
+        }
+        
+        .instruction {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 25px;
+            font-size: 12px;
+            z-index: 100;
+            backdrop-filter: blur(4px);
+            pointer-events: none;
+        }
+        
+        @media (max-width: 768px) {
+            .info-panel { font-size: 10px; bottom: 10px; }
+            .status-panel { font-size: 9px; top: 10px; left: 10px; }
+            .instruction { font-size: 9px; top: 10px; right: 10px; }
+        }
+        
+        .ar-button {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 200;
+        }
+    </style>
+</head>
+<body>
+    <div class="status-panel" id="status">🔍 Ініціалізація WebXR...</div>
+    <div class="instruction" id="instruction">
+        📱 Наведіть камеру на підлогу<br>
+        🏛️ Піраміди з'являться перед вами
+    </div>
+    <div class="info-panel" id="info">
+        🏛️ ПІРАМІДИ ГІЗИ | Хеопс • Хефрен • Мікерін | ✨ Золоті верхівки
+    </div>
+
+    <script type="module" src="webxr-scene.js"></script>
+</body>
+</html>
