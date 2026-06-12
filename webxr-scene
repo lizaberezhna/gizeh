@@ -27,56 +27,18 @@ const fillLight = new THREE.PointLight(0xCCAA88, 0.5);
 fillLight.position.set(0, -1, 0);
 scene.add(fillLight);
 
-// ========== ДОПОМІЖНІ ФУНКЦІЇ ==========
-function updateStatus(message, isOk = true) {
-    const statusDiv = document.getElementById('status');
-    if (statusDiv) {
-        statusDiv.innerHTML = message;
-        statusDiv.style.color = isOk ? '#0f0' : '#ff0';
-    }
-    console.log('[WebXR]', message);
-}
-
 // ========== СТВОРЕННЯ ПІРАМІД ==========
-function createPyramid(radius, height, x, z, color, goldDelay = 0) {
+function createPyramid(radius, height, x, z, color, delay = 0) {
     const group = new THREE.Group();
     
-    // Цегляна текстура (програмно)
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-    
-    ctx.fillStyle = '#B5651D';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    ctx.strokeStyle = '#8B4513';
-    ctx.lineWidth = 4;
-    const brickW = 64;
-    const brickH = 32;
-    
-    for (let y = 0; y < canvas.height; y += brickH) {
-        const offset = (Math.floor(y / brickH) % 2) * brickW / 2;
-        for (let xb = offset; xb < canvas.width; xb += brickW) {
-            ctx.strokeRect(xb + 2, y + 2, brickW - 4, brickH - 4);
-            ctx.fillStyle = '#C47E3A';
-            ctx.fillRect(xb + 2, y + 2, brickW - 4, brickH - 4);
-            ctx.fillStyle = '#B5651D';
-        }
-    }
-    
-    const brickTexture = new THREE.CanvasTexture(canvas);
-    brickTexture.wrapS = THREE.RepeatWrapping;
-    brickTexture.wrapT = THREE.RepeatWrapping;
-    brickTexture.repeat.set(radius / 2, height / 3);
-    
-    const material = new THREE.MeshStandardMaterial({
-        map: brickTexture,
+    // Геометрія
+    const geometry = new THREE.ConeGeometry(radius, height, 32);
+    const material = new THREE.MeshStandardMaterial({ 
+        color: 0xB5651D,
         roughness: 0.7,
         metalness: 0.1
     });
     
-    const geometry = new THREE.ConeGeometry(radius, height, 32);
     const pyramid = new THREE.Mesh(geometry, material);
     pyramid.castShadow = true;
     pyramid.receiveShadow = true;
@@ -89,6 +51,7 @@ function createPyramid(radius, height, x, z, color, goldDelay = 0) {
         color: 0xFFD700,
         metalness: 0.95,
         roughness: 0.2,
+        emissive: 0x442200,
         emissiveIntensity: 0.3
     });
     
@@ -96,13 +59,11 @@ function createPyramid(radius, height, x, z, color, goldDelay = 0) {
     goldTop.position.y = height;
     group.add(goldTop);
     
-    // Анімація верхівки
+    // Анімація
     let time = 0;
     function animateGold() {
         time += 0.016;
-        const intensity = 0.3 + Math.sin(time * 3 + goldDelay) * 0.15;
-        goldMaterial.emissiveIntensity = intensity;
-        goldMaterial.color.setHSL(0.12 + Math.sin(time * 1.5 + goldDelay) * 0.03, 1.0, 0.55);
+        goldMaterial.emissiveIntensity = 0.3 + Math.sin(time * 3 + delay) * 0.15;
         requestAnimationFrame(animateGold);
     }
     animateGold();
@@ -111,20 +72,20 @@ function createPyramid(radius, height, x, z, color, goldDelay = 0) {
     return group;
 }
 
-// ========== ДОДАЄМО ПІРАМІДИ (через 1 метр перед камерою) ==========
-// Це забезпечить їх появу одразу після запуску AR
-
+// ========== ДОДАЄМО ПІРАМІДИ ==========
 const scale = 0.008;
 
-// Група для всіх пірамід
 const pyramidsGroup = new THREE.Group();
 
+// Хеопс (центр)
 const khufu = createPyramid(230 * scale, 145 * scale, 0, 0, '#B5651D', 0);
 pyramidsGroup.add(khufu);
 
+// Хефрен (ліворуч)
 const khafre = createPyramid(210 * scale, 135 * scale, -2.2, -1.5, '#B5651D', 1);
 pyramidsGroup.add(khafre);
 
+// Мікерін (праворуч)
 const menkaure = createPyramid(100 * scale, 65 * scale, 2.0, -1.2, '#B5651D', 2);
 pyramidsGroup.add(menkaure);
 
@@ -138,30 +99,20 @@ groundPlane.position.y = -0.05;
 groundPlane.receiveShadow = true;
 pyramidsGroup.add(groundPlane);
 
-scene.add(pyramidsGroup);
-
-// Розміщуємо піраміди на відстані 1.5 метра перед камерою
-// WebXR використовує camera.position для визначення місця
+// Розміщуємо на відстані 1.5 метра перед камерою
 pyramidsGroup.position.set(0, -0.2, -1.5);
 
-// ========== АНІМАЦІЯ ==========
-let time = 0;
+scene.add(pyramidsGroup);
 
+// ========== АНІМАЦІЯ ==========
 function animate() {
-    time += 0.016;
-    
-    // Повільне обертання всієї групи для кращого огляду
-    // pyramidsGroup.rotation.y = Math.sin(time * 0.1) * 0.2;
-    
     renderer.render(scene, camera);
 }
 
 // ========== КНОПКА AR ==========
-const arButton = ARButton.createButton(renderer, {
-    requiredFeatures: ['hit-test'],
-    optionalFeatures: ['dom-overlay'],
-    domOverlay: { root: document.body }
-});
+// Спрощена версія без hit-test для кращої сумісності
+const arButton = ARButton.createButton(renderer, {});
+
 arButton.style.cssText = `
     position: fixed !important;
     bottom: 30px !important;
@@ -177,21 +128,44 @@ arButton.style.cssText = `
     cursor: pointer !important;
     z-index: 200 !important;
     font-family: monospace !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
 `;
+
 document.body.appendChild(arButton);
+
+// ========== ОНОВЛЕННЯ СТАТУСУ ==========
+function updateStatus(message, isOk = true) {
+    const statusDiv = document.getElementById('status');
+    if (statusDiv) {
+        statusDiv.innerHTML = message;
+        statusDiv.style.color = isOk ? '#0f0' : '#ff0';
+    }
+    console.log('[WebXR]', message);
+}
 
 // ========== ОБРОБНИКИ ПОДІЙ ==========
 renderer.xr.addEventListener('sessionstart', () => {
     updateStatus('🎉 AR активовано! Піраміди перед вами');
-    // Приховуємо кнопку після запуску
     arButton.style.opacity = '0';
     arButton.style.pointerEvents = 'none';
+    
+    const instruction = document.getElementById('instruction');
+    if (instruction) {
+        instruction.innerHTML = '🏛️ Піраміди з\'явилися! Обійдіть їх навколо';
+        instruction.style.background = 'rgba(0,100,0,0.8)';
+    }
 });
 
 renderer.xr.addEventListener('sessionend', () => {
     updateStatus('⏸️ AR завершено');
     arButton.style.opacity = '1';
     arButton.style.pointerEvents = 'auto';
+    
+    const instruction = document.getElementById('instruction');
+    if (instruction) {
+        instruction.innerHTML = '📱 Наведіть камеру на підлогу<br>🏛️ Піраміди з\'являться перед вами';
+        instruction.style.background = 'rgba(0,0,0,0.7)';
+    }
 });
 
 // ========== ЗАПУСК ==========
@@ -206,3 +180,5 @@ window.addEventListener('resize', () => {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+console.log('🏛️ WebXR Піраміди Гізи завантажено');
